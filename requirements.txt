@@ -1,0 +1,7 @@
+face-recognition
+opencv-python
+numpy
+scikit-learn
+joblib
+imutils
+tqdm
