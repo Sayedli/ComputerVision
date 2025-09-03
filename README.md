@@ -1,9 +1,9 @@
-<<<<<<< HEAD
+
 # ComputerVision
-=======
+
 # Face Recognition MVP
 
-A simple face recognition project using Python, OpenCV, and `face_recognition`.
+Face recognition project using Python, OpenCV, and `face_recognition`.
 
 ## Setup
 
