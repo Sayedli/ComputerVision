@@ -176,6 +176,62 @@ def encode_dataset(
 
 
 # ----------------------------
+# Train KNN on encodings
+# ----------------------------
+def load_encodings(enc_path: Path = ENC_PATH) -> Tuple[np.ndarray, np.ndarray]:
+    if not enc_path.exists():
+        raise FileNotFoundError(f"Encodings file not found: {enc_path}. Run 'encode' first.")
+    data = np.load(str(enc_path), allow_pickle=True)
+    X = data["X"]
+    y = data["y"]
+    if X.ndim != 2 or X.shape[1] != 128:
+        raise ValueError("Encodings X must have shape (N, 128).")
+    if len(X) != len(y):
+        raise ValueError("Encodings X and labels y have mismatched lengths.")
+    return X, y
+
+
+def train_knn(
+    enc_path: Path = ENC_PATH,
+    knn_path: Path = KNN_PATH,
+    n_neighbors: int | None = None,
+    weights: str = "distance",
+    algorithm: str = "auto",
+    metric: str = "euclidean",
+) -> Tuple[KNeighborsClassifier, int, np.ndarray]:
+    """
+    Train a KNN classifier on saved encodings and persist it to disk.
+
+    Returns: (knn, k_used, classes)
+    """
+    X, y = load_encodings(enc_path)
+    n_samples = len(X)
+    if n_samples == 0:
+        raise RuntimeError("Encodings are empty; nothing to train.")
+
+    # Choose a default k ~ sqrt(N) if not provided
+    if n_neighbors is None or n_neighbors <= 0:
+        n_neighbors = max(1, int(round(np.sqrt(n_samples))))
+    # Ensure k does not exceed number of samples
+    if n_neighbors > n_samples:
+        n_neighbors = n_samples
+
+    knn = KNeighborsClassifier(
+        n_neighbors=n_neighbors,
+        weights=weights,
+        algorithm=algorithm,
+        metric=metric,
+    )
+    knn.fit(X, y)
+
+    knn_path.parent.mkdir(parents=True, exist_ok=True)
+    dump(knn, str(knn_path))
+
+    classes = np.unique(y)
+    return knn, n_neighbors, classes
+
+
+# ----------------------------
 # CLI
 # ----------------------------
 def build_parser() -> argparse.ArgumentParser:
@@ -197,8 +253,23 @@ def build_parser() -> argparse.ArgumentParser:
         "--out", type=str, default=str(ENC_PATH), help="Output npz path (X,y)"
     )
 
-    # train (stub for now)
-    sub.add_parser("train", help="Train KNN on embeddings (stub)")
+    # train
+    p_train = sub.add_parser("train", help="Train KNN on embeddings and save model")
+    p_train.add_argument("--enc", type=str, default=str(ENC_PATH), help="Input encodings npz path")
+    p_train.add_argument("--out", type=str, default=str(KNN_PATH), help="Output KNN joblib path")
+    p_train.add_argument("--k", type=int, default=0, help="Neighbors (0 = auto sqrt(N))")
+    p_train.add_argument(
+        "--weights", choices=["uniform", "distance"], default="distance", help="KNN weights"
+    )
+    p_train.add_argument(
+        "--algorithm",
+        choices=["auto", "ball_tree", "kd_tree", "brute"],
+        default="auto",
+        help="KNN algorithm",
+    )
+    p_train.add_argument(
+        "--metric", choices=["euclidean", "minkowski", "cosine"], default="euclidean", help="Distance metric"
+    )
 
     # webcam (stub for now)
     sub.add_parser("webcam", help="Live webcam recognition (stub)")
@@ -231,7 +302,17 @@ def main(argv: List[str] | None = None) -> None:
         return
 
     if args.cmd == "train":
-        print("train: not implemented yet.")
+        enc_path = Path(args.enc)
+        out_path = Path(args.out)
+        knn, k_used, classes = train_knn(
+            enc_path=enc_path,
+            knn_path=out_path,
+            n_neighbors=(None if args.k == 0 else args.k),
+            weights=args.weights,
+            algorithm=args.algorithm,
+            metric=args.metric,
+        )
+        print(f"Saved KNN to {out_path} (k={k_used}, classes={len(classes)})")
         return
 
     if args.cmd == "webcam":
