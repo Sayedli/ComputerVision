@@ -232,6 +232,89 @@ def train_knn(
 
 
 # ----------------------------
+# Recognize faces in an image
+# ----------------------------
+def load_knn(knn_path: Path = KNN_PATH) -> KNeighborsClassifier:
+    if not knn_path.exists():
+        raise FileNotFoundError(f"KNN model not found: {knn_path}. Run 'train' first.")
+    model: KNeighborsClassifier = load(str(knn_path))
+    return model
+
+
+def recognize_image(
+    image_path: Path,
+    knn_path: Path = KNN_PATH,
+    detector_model: str = "hog",
+    upsample: int = 1,
+    threshold: float = 0.6,
+    show: bool = False,
+    out_path: Path | None = None,
+) -> list[dict]:
+    """
+    Recognize faces in a single image using the trained KNN classifier.
+
+    Returns a list of result dicts with keys: box, label, distance, confidence.
+    Optionally draws boxes/labels and shows/saves the annotated image.
+    """
+    if not image_path.exists():
+        raise FileNotFoundError(f"Image does not exist: {image_path}")
+
+    knn = load_knn(knn_path)
+
+    bgr = cv2.imread(str(image_path))
+    if bgr is None:
+        raise RuntimeError(f"Failed to read image: {image_path}")
+    rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
+
+    boxes = face_recognition.face_locations(
+        rgb, number_of_times_to_upsample=upsample, model=detector_model
+    )
+    if not boxes:
+        print("No faces found.")
+        # Optionally save/show the original image anyway
+        if out_path is not None:
+            cv2.imwrite(str(out_path), bgr)
+        if show:
+            cv2.imshow("recognize", bgr)
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
+        return []
+
+    encs = face_recognition.face_encodings(rgb, boxes, num_jitters=1)
+    # Predict labels
+    preds = knn.predict(encs)
+    # Get nearest neighbor distance per face
+    dists, _ = knn.kneighbors(encs, n_neighbors=1, return_distance=True)
+    dists = dists.reshape(-1)
+
+    results = []
+    for box, pred_label, dist in zip(boxes, preds, dists):
+        conf = distance_to_confidence(float(dist), threshold)
+        label = pred_label if dist <= threshold else "Unknown"
+        results.append({
+            "box": box,
+            "label": str(label),
+            "distance": float(dist),
+            "confidence": float(conf),
+        })
+
+    # Draw and optionally show/save
+    for r in results:
+        display_label = f"{r['label']} {r['confidence']:.2f}"
+        draw_box_with_label(bgr, r["box"], display_label)
+
+    if out_path is not None:
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        cv2.imwrite(str(out_path), bgr)
+    if show:
+        cv2.imshow("recognize", bgr)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
+    return results
+
+
+# ----------------------------
 # CLI
 # ----------------------------
 def build_parser() -> argparse.ArgumentParser:
@@ -274,9 +357,15 @@ def build_parser() -> argparse.ArgumentParser:
     # webcam (stub for now)
     sub.add_parser("webcam", help="Live webcam recognition (stub)")
 
-    # recognize (stub for now)
-    p_rec = sub.add_parser("recognize", help="Recognize faces in an image (stub)")
+    # recognize
+    p_rec = sub.add_parser("recognize", help="Recognize faces in a single image")
     p_rec.add_argument("--image", required=True, help="Path to image")
+    p_rec.add_argument("--model", choices=["hog", "cnn"], default="hog", help="Face detector model")
+    p_rec.add_argument("--upsample", type=int, default=1, help="Number of times to upsample")
+    p_rec.add_argument("--threshold", type=float, default=0.6, help="Distance threshold for 'Unknown'")
+    p_rec.add_argument("--knn", type=str, default=str(KNN_PATH), help="Path to trained KNN joblib")
+    p_rec.add_argument("--out", type=str, default="", help="Optional output image path to save annotations")
+    p_rec.add_argument("--show", action="store_true", help="Show annotated image in a window")
 
     return parser
 
@@ -320,7 +409,25 @@ def main(argv: List[str] | None = None) -> None:
         return
 
     if args.cmd == "recognize":
-        print("recognize: not implemented yet.")
+        img_path = Path(args.image)
+        knn_path = Path(args.knn)
+        out_path = Path(args.out) if args.out else None
+        results = recognize_image(
+            image_path=img_path,
+            knn_path=knn_path,
+            detector_model=args.model,
+            upsample=args.upsample,
+            threshold=args.threshold,
+            show=args.show,
+            out_path=out_path,
+        )
+        for r in results:
+            t, rgt, btm, lft = r["box"]
+            print(
+                f"box=({lft},{t},{rgt},{btm}) label={r['label']} dist={r['distance']:.3f} conf={r['confidence']:.2f}"
+            )
+        if out_path is not None:
+            print(f"Saved annotated image to {out_path}")
         return
 
 
