@@ -315,6 +315,91 @@ def recognize_image(
 
 
 # ----------------------------
+# Live webcam recognition
+# ----------------------------
+def recognize_webcam(
+    knn_path: Path = KNN_PATH,
+    detector_model: str = "hog",
+    upsample: int = 0,
+    threshold: float = 0.6,
+    camera: int = 0,
+    scale: float = 0.25,
+    process_every: int = 2,
+) -> None:
+    """
+    Run a webcam loop that detects faces, predicts labels with a trained KNN,
+    and displays annotated frames. Press 'q' to quit.
+    """
+    knn = load_knn(knn_path)
+
+    cap = cv2.VideoCapture(camera)
+    if not cap.isOpened():
+        raise RuntimeError(f"Cannot open camera index {camera}")
+
+    frame_idx = 0
+    try:
+        while True:
+            ok, frame = cap.read()
+            if not ok or frame is None:
+                print("[warn] Failed to read frame from camera.")
+                break
+
+            # Optionally process every Nth frame for speed
+            do_process = (frame_idx % max(1, process_every) == 0)
+            frame_idx += 1
+
+            display = frame.copy()
+            results = []
+            if do_process:
+                # Resize to speed up detection/encoding
+                if scale != 1.0:
+                    small = cv2.resize(frame, (0, 0), fx=scale, fy=scale)
+                else:
+                    small = frame
+                rgb_small = cv2.cvtColor(small, cv2.COLOR_BGR2RGB)
+
+                boxes_small = face_recognition.face_locations(
+                    rgb_small, number_of_times_to_upsample=upsample, model=detector_model
+                )
+                if boxes_small:
+                    encs = face_recognition.face_encodings(rgb_small, boxes_small, num_jitters=1)
+                    if len(encs) > 0:
+                        preds = knn.predict(encs)
+                        dists, _ = knn.kneighbors(encs, n_neighbors=1, return_distance=True)
+                        dists = dists.reshape(-1)
+
+                        inv = (1.0 / scale) if scale != 0 else 1.0
+                        for box_s, pred_label, dist in zip(boxes_small, preds, dists):
+                            # scale back box to original frame size
+                            top, right, bottom, left = box_s
+                            top = int(round(top * inv))
+                            right = int(round(right * inv))
+                            bottom = int(round(bottom * inv))
+                            left = int(round(left * inv))
+                            conf = distance_to_confidence(float(dist), threshold)
+                            label = pred_label if dist <= threshold else "Unknown"
+                            results.append({
+                                "box": (top, right, bottom, left),
+                                "label": str(label),
+                                "distance": float(dist),
+                                "confidence": float(conf),
+                            })
+
+            # Draw last computed results
+            for r in results:
+                display_label = f"{r['label']} {r['confidence']:.2f}"
+                draw_box_with_label(display, r["box"], display_label)
+
+            cv2.imshow("webcam", display)
+            key = cv2.waitKey(1) & 0xFF
+            if key == ord('q'):
+                break
+    finally:
+        cap.release()
+        cv2.destroyAllWindows()
+
+
+# ----------------------------
 # CLI
 # ----------------------------
 def build_parser() -> argparse.ArgumentParser:
@@ -354,8 +439,15 @@ def build_parser() -> argparse.ArgumentParser:
         "--metric", choices=["euclidean", "minkowski", "cosine"], default="euclidean", help="Distance metric"
     )
 
-    # webcam (stub for now)
-    sub.add_parser("webcam", help="Live webcam recognition (stub)")
+    # webcam
+    p_cam = sub.add_parser("webcam", help="Live webcam recognition with KNN labels")
+    p_cam.add_argument("--knn", type=str, default=str(KNN_PATH), help="Path to trained KNN joblib")
+    p_cam.add_argument("--model", choices=["hog", "cnn"], default="hog", help="Face detector model")
+    p_cam.add_argument("--upsample", type=int, default=0, help="Number of times to upsample (detector)")
+    p_cam.add_argument("--threshold", type=float, default=0.6, help="Distance threshold for 'Unknown'")
+    p_cam.add_argument("--camera", type=int, default=0, help="Camera index (default 0)")
+    p_cam.add_argument("--scale", type=float, default=0.25, help="Downscale factor for processing (0.25 = quarter)")
+    p_cam.add_argument("--process-every", type=int, default=2, help="Process every N frames for speed")
 
     # recognize
     p_rec = sub.add_parser("recognize", help="Recognize faces in a single image")
@@ -405,7 +497,15 @@ def main(argv: List[str] | None = None) -> None:
         return
 
     if args.cmd == "webcam":
-        print("webcam: not implemented yet.")
+        recognize_webcam(
+            knn_path=Path(args.knn),
+            detector_model=args.model,
+            upsample=args.upsample,
+            threshold=args.threshold,
+            camera=args.camera,
+            scale=args.scale,
+            process_every=args.process_every,
+        )
         return
 
     if args.cmd == "recognize":
