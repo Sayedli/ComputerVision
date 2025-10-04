@@ -33,7 +33,16 @@ If `face-recognition`/`dlib` fails to install, consult platform-specific instruc
 
 ## Project Layout
 ```
-fr.py                # Main CLI script
+fr.py                # Thin CLI entry
+fr/                  # Package with implementation
+  cli.py             # CLI wiring
+  paths.py           # Project paths and dirs
+  utils.py           # Helpers (drawing, confidence, I/O utils)
+  encode.py          # Dataset → embeddings logic
+  train.py           # KNN training utilities
+  recognize.py       # Single-image recognition
+  webcam.py          # Live webcam recognition
+  register.py        # Webcam data collection
 dataset/             # Person folders with face images (created automatically)
   Alice/ *.jpg
   Bob/   *.jpg
@@ -72,6 +81,23 @@ python fr.py webcam
 ```
 python fr.py recognize --image path/to/photo.jpg
 ```
+
+## Code Structure
+- `fr.cli`: argparse subcommands; forwards to modules.
+- `fr.encode`: walks `dataset/`, detects faces, computes 128‑D encodings, saves NPZ.
+- `fr.train`: loads encodings and trains `KNeighborsClassifier` (also exposes a pure `train_knn_from_arrays` for smoke tests).
+- `fr.recognize`: classifies faces in a single image using the trained model.
+- `fr.webcam`: live loop for webcam recognition (scaling + frame skipping for speed).
+- `fr.register`: collects face crops via webcam and saves to `dataset/<name>/`.
+
+## Developer Smoke Tests
+This repo does not include a formal test suite. For a quick no‑I/O sanity check of training logic:
+
+```
+python3 scripts/smoke_train.py
+```
+
+It synthesizes two clusters in 128‑D, trains KNN via `fr.train.train_knn_from_arrays`, and reports accuracy.
 
 ## Tips
 - Data quality: Use clear, front-facing images with varied lighting/angles per person.

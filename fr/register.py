@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+"""Webcam registration helpers for collecting face crops into the dataset."""
+
 from pathlib import Path
 
 import cv2
@@ -101,4 +103,3 @@ def register_person(
     finally:
         cap.release()
         cv2.destroyAllWindows()
-

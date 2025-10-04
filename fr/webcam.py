@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+"""Live webcam recognition loop using a trained KNN model."""
+
 from pathlib import Path
 
 import cv2
@@ -83,4 +85,3 @@ def recognize_webcam(
     finally:
         cap.release()
         cv2.destroyAllWindows()
-

@@ -1,5 +1,10 @@
 from __future__ import annotations
 
+"""Dataset encoding utilities.
+
+Walks a dataset tree, detects faces, computes 128‑D embeddings, and saves them.
+"""
+
 from pathlib import Path
 from typing import List, Tuple
 
@@ -18,6 +23,10 @@ def encode_dataset(
     model: str = "hog",
     upsample: int = 1,
 ) -> Tuple[np.ndarray, np.ndarray, int, int]:
+    """Encode all faces found in `dataset_dir` and save to `enc_path`.
+
+    Returns X, y, images_scanned, faces_encoded.
+    """
     persons = list_persons(dataset_dir)
     if not persons:
         raise RuntimeError(f"No person folders found in {dataset_dir}. Add data or run 'register'.")
@@ -68,4 +77,3 @@ def encode_dataset(
     np.savez_compressed(str(enc_path), X=X, y=y)
 
     return X, y, len(all_paths), n_faces
-

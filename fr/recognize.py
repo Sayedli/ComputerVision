@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+"""Single-image recognition utilities."""
+
 from pathlib import Path
 from typing import List, Dict
 
@@ -83,4 +85,3 @@ def recognize_image(
         cv2.destroyAllWindows()
 
     return results
-

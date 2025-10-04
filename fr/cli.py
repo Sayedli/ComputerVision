@@ -1,5 +1,10 @@
 from __future__ import annotations
 
+"""CLI wiring for the Face Recognition MVP.
+
+Defines subcommands and forwards to implementation modules.
+"""
+
 import argparse
 from pathlib import Path
 from typing import List
@@ -149,4 +154,3 @@ def main(argv: List[str] | None = None) -> None:
         if out_path is not None:
             print(f"Saved annotated image to {out_path}")
         return
-
