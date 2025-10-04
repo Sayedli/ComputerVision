@@ -400,6 +400,118 @@ def recognize_webcam(
 
 
 # ----------------------------
+# Register: collect samples via webcam
+# ----------------------------
+def _expand_and_clip_box(box: Tuple[int, int, int, int], w: int, h: int, margin: float = 0.2) -> Tuple[int, int, int, int]:
+    top, right, bottom, left = box
+    bw = right - left
+    bh = bottom - top
+    mt = int(round(bh * margin))
+    ml = int(round(bw * margin))
+    top = max(0, top - mt)
+    bottom = min(h - 1, bottom + mt)
+    left = max(0, left - ml)
+    right = min(w - 1, right + ml)
+    return top, right, bottom, left
+
+
+def register_person(
+    name: str,
+    num: int = 20,
+    camera: int = 0,
+    detector_model: str = "hog",
+    upsample: int = 0,
+    scale: float = 0.5,
+    margin: float = 0.2,
+    mirror: bool = True,
+) -> int:
+    """
+    Capture `num` face crops for a person from the webcam and save under dataset/<name>/.
+    Returns the number of saved images.
+    """
+    out_dir = DATASET_DIR / name
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    cap = cv2.VideoCapture(camera)
+    if not cap.isOpened():
+        raise RuntimeError(f"Cannot open camera index {camera}")
+
+    saved = 0
+    idx = 0
+    try:
+        while saved < num:
+            ok, frame = cap.read()
+            if not ok or frame is None:
+                print("[warn] Failed to read frame from camera.")
+                break
+
+            if mirror:
+                frame = cv2.flip(frame, 1)
+
+            display = frame.copy()
+            # Resize for detection speed
+            if scale != 1.0:
+                small = cv2.resize(frame, (0, 0), fx=scale, fy=scale)
+            else:
+                small = frame
+            rgb_small = cv2.cvtColor(small, cv2.COLOR_BGR2RGB)
+
+            boxes_small = face_recognition.face_locations(
+                rgb_small, number_of_times_to_upsample=upsample, model=detector_model
+            )
+
+            target_box = None
+            if boxes_small:
+                # choose the largest face
+                inv = (1.0 / scale) if scale != 0 else 1.0
+                def area(b):
+                    t, r, btm, l = b
+                    return (r - l) * (btm - t)
+                b = max(boxes_small, key=area)
+                t, r, btm, l = b
+                t = int(round(t * inv)); r = int(round(r * inv)); btm = int(round(btm * inv)); l = int(round(l * inv))
+                target_box = (t, r, btm, l)
+                target_box = _expand_and_clip_box(target_box, display.shape[1], display.shape[0], margin)
+                draw_box_with_label(display, target_box, f"{name} {saved+1}/{num}")
+
+            # HUD text
+            cv2.putText(display, "Press SPACE to capture, Q to quit", (10, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0,255,0), 2)
+            cv2.imshow("register", display)
+            key = cv2.waitKey(1) & 0xFF
+
+            should_capture = False
+            if key == ord('q'):
+                break
+            if key == ord(' '):
+                should_capture = True
+            # Auto-capture if a face is present and not pressing keys
+            if target_box is not None and key == 255:
+                should_capture = True
+
+            if should_capture and target_box is not None:
+                t, r, btm, l = target_box
+                crop = frame[t:btm, l:r]
+                if crop.size == 0:
+                    continue
+                # simple normalization: ensure minimum size
+                h, w = crop.shape[:2]
+                if h < 40 or w < 40:
+                    # skip tiny crops
+                    continue
+                fname = out_dir / f"{name}_{idx:04d}.jpg"
+                idx += 1
+                ok = cv2.imwrite(str(fname), crop)
+                if ok:
+                    saved += 1
+                else:
+                    print(f"[warn] Failed to save {fname}")
+
+        return saved
+    finally:
+        cap.release()
+        cv2.destroyAllWindows()
+
+# ----------------------------
 # CLI
 # ----------------------------
 def build_parser() -> argparse.ArgumentParser:
@@ -408,10 +520,16 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="cmd", required=True)
 
-    # register (stub for now)
-    p_reg = sub.add_parser("register", help="Capture face crops via webcam (stub)")
-    p_reg.add_argument("--name", required=True, help="Person name")
+    # register
+    p_reg = sub.add_parser("register", help="Capture face crops via webcam to dataset/<name>")
+    p_reg.add_argument("--name", required=True, help="Person name (folder under dataset/)")
     p_reg.add_argument("--num", type=int, default=20, help="Number of samples to capture")
+    p_reg.add_argument("--camera", type=int, default=0, help="Camera index (default 0)")
+    p_reg.add_argument("--model", choices=["hog", "cnn"], default="hog", help="Face detector model")
+    p_reg.add_argument("--upsample", type=int, default=0, help="Number of times to upsample (detector)")
+    p_reg.add_argument("--scale", type=float, default=0.5, help="Downscale factor for detection (0.5 = half)")
+    p_reg.add_argument("--margin", type=float, default=0.2, help="Extra margin around the face crop (fraction)")
+    p_reg.add_argument("--no-mirror", action="store_true", help="Disable mirroring for preview")
 
     # encode
     p_enc = sub.add_parser("encode", help="Encode dataset images into embeddings")
@@ -467,7 +585,17 @@ def main(argv: List[str] | None = None) -> None:
     args = parser.parse_args(argv)
 
     if args.cmd == "register":
-        print("register: not implemented yet. Use manual dataset for now.")
+        saved = register_person(
+            name=args.name,
+            num=args.num,
+            camera=args.camera,
+            detector_model=args.model,
+            upsample=args.upsample,
+            scale=args.scale,
+            margin=args.margin,
+            mirror=(not args.no_mirror),
+        )
+        print(f"Saved {saved} images to {DATASET_DIR / args.name}")
         return
 
     if args.cmd == "encode":
