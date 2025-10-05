@@ -99,6 +99,23 @@ python3 scripts/smoke_train.py
 
 It synthesizes two clusters in 128‑D, trains KNN via `fr.train.train_knn_from_arrays`, and reports accuracy.
 
+## Running Pytest
+Basic unit tests cover pure utilities and training helpers (no CV dependencies).
+
+1) Install pytest (ideally in your venv):
+```
+pip install pytest
+```
+
+2) Run tests:
+```
+pytest
+```
+
+Notes:
+- Tests intentionally avoid importing heavy modules (`face_recognition`, `cv2`).
+- If you want broader tests (e.g., encode/recognize), ensure those deps are installed and we can add integration tests.
+
 ## Tips
 - Data quality: Use clear, front-facing images with varied lighting/angles per person.
 - Class balance: Aim for similar numbers of samples per person to help KNN.
