@@ -29,6 +29,11 @@ source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
+Optional (UI):
+```
+pip install -r requirements-ui.txt
+```
+
 If `face-recognition`/`dlib` fails to install, consult platform-specific instructions for building dlib from source (ensure CMake and a C++ toolchain are available).
 
 ## Project Layout
@@ -82,6 +87,14 @@ python fr.py webcam
 python fr.py recognize --image path/to/photo.jpg
 ```
 
+Or install as a package and use the `fr` command:
+```
+pip install -e .
+fr encode
+fr train
+fr recognize --image path/to/photo.jpg
+```
+
 ## Code Structure
 - `fr.cli`: argparse subcommands; forwards to modules.
 - `fr.encode`: walks `dataset/`, detects faces, computes 128‑D encodings, saves NPZ.
@@ -115,6 +128,19 @@ pytest
 Notes:
 - Tests intentionally avoid importing heavy modules (`face_recognition`, `cv2`).
 - If you want broader tests (e.g., encode/recognize), ensure those deps are installed and we can add integration tests.
+
+## Streamlit UI
+Install UI deps and launch the app for an easy front end:
+
+```
+pip install -r requirements-ui.txt
+streamlit run ui/streamlit_app.py
+```
+
+Tips:
+- Load your trained `models/knn.joblib` via the sidebar (use the default path or browse to your file).
+- Use the “Upload Image” or “Webcam Snapshot” tabs to run recognition.
+- Adjust detector model, upsample, and unknown threshold in the sidebar.
 
 ## Tips
 - Data quality: Use clear, front-facing images with varied lighting/angles per person.
