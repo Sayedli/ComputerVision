@@ -1,0 +1,21 @@
+version: "3.9"
+
+services:
+  fr:
+    build: .
+    image: cv-fr-mvp
+    command: ["fr", "-h"]
+    volumes:
+      - ./dataset:/app/dataset
+      - ./models:/app/models
+      - ./:/host
+
+  ui:
+    build: .
+    image: cv-fr-mvp
+    command: ["streamlit", "run", "ui/streamlit_app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./models:/app/models
+

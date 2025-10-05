@@ -178,6 +178,36 @@ Notes:
 - Webcam inside Docker for the CLI is not recommended (device passthrough required). The Streamlit UI webcam works in-browser with your host camera.
 - If `dlib` wheels aren’t available for your platform, the image installs build tools and will compile from source (slower first build).
 
+### Docker Compose
+Use docker-compose to simplify volumes and commands.
+
+1) Build images
+```
+docker compose build
+```
+
+2) Run the Streamlit UI (http://localhost:8501)
+```
+docker compose up ui
+```
+
+3) Run CLI commands
+```
+# Encode dataset → embeddings
+docker compose run --rm fr fr encode
+
+# Train KNN
+docker compose run --rm fr fr train
+
+# Recognize on a host image (mounted at /host)
+docker compose run --rm fr fr recognize --image /host/path/to/photo.jpg
+```
+
+Volumes:
+- `./dataset` ↔ `/app/dataset`
+- `./models` ↔ `/app/models`
+- `./` ↔ `/host` (for convenient file references)
+
 ## Tips
 - Data quality: Use clear, front-facing images with varied lighting/angles per person.
 - Class balance: Aim for similar numbers of samples per person to help KNN.
