@@ -142,6 +142,42 @@ Tips:
 - Use the “Upload Image” or “Webcam Snapshot” tabs to run recognition.
 - Adjust detector model, upsample, and unknown threshold in the sidebar.
 
+## Docker
+Build a container that includes CLI and the Streamlit UI.
+
+1) Build
+```
+docker build -t cv-fr-mvp .
+```
+
+2) CLI usage (mount your data/models so results persist)
+```
+docker run --rm -it \
+  -v "$PWD/dataset:/app/dataset" \
+  -v "$PWD/models:/app/models" \
+  cv-fr-mvp fr encode
+
+docker run --rm -it \
+  -v "$PWD/models:/app/models" \
+  cv-fr-mvp fr train
+
+docker run --rm -it \
+  -v "$PWD/models:/app/models" \
+  -v "$PWD:/host" \
+  cv-fr-mvp fr recognize --image /host/path/to/photo.jpg
+```
+
+3) Streamlit UI
+```
+docker run --rm -p 8501:8501 \
+  -v "$PWD/models:/app/models" \
+  cv-fr-mvp streamlit run ui/streamlit_app.py --server.port=8501 --server.address=0.0.0.0
+```
+
+Notes:
+- Webcam inside Docker for the CLI is not recommended (device passthrough required). The Streamlit UI webcam works in-browser with your host camera.
+- If `dlib` wheels aren’t available for your platform, the image installs build tools and will compile from source (slower first build).
+
 ## Tips
 - Data quality: Use clear, front-facing images with varied lighting/angles per person.
 - Class balance: Aim for similar numbers of samples per person to help KNN.

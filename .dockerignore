@@ -1,0 +1,20 @@
+.git
+.gitignore
+__pycache__
+*.pyc
+*.pyo
+.venv
+env/
+venv/
+build/
+dist/
+*.egg-info/
+
+# Large or user-generated content; mount these as volumes instead
+dataset/
+models/
+
+# OS/editor cruft
+.DS_Store
+.idea/
+.vscode/
