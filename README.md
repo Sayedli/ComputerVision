@@ -252,3 +252,21 @@ docker compose run --rm fr python3 scripts/prepare_samples.py
 
 ## License
 Proprietary/Private unless otherwise specified by the repository owner.
+
+## Django Web UI (optional)
+If you prefer Django over Streamlit, a minimal app is included.
+
+Install Django requirements:
+```
+pip install -r requirements-django.txt
+```
+
+Run the dev server:
+```
+python manage.py runserver
+```
+
+Open http://127.0.0.1:8000/ and upload an image. The page uses your trained model at `models/knn.joblib` by default. You can override via env var `FR_KNN_PATH`.
+
+API endpoint:
+- POST `/api/recognize` with `multipart/form-data` field `image`, optional `model`, `upsample`, `threshold`. Returns JSON of detections.

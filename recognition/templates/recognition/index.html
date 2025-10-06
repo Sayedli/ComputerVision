@@ -1,0 +1,86 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Face Recognition – Django</title>
+    <style>
+      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 2rem; }
+      .row { display: flex; gap: 2rem; align-items: flex-start; }
+      .panel { border: 1px solid #ddd; padding: 1rem; border-radius: 8px; }
+      .error { color: #b00; }
+      table { border-collapse: collapse; }
+      th, td { border: 1px solid #ddd; padding: 6px 10px; }
+    </style>
+  </head>
+  <body>
+    <h1>Face Recognition – Django UI</h1>
+
+    {% if error %}
+      <p class="error">Error: {{ error }}</p>
+    {% endif %}
+    {% if message %}
+      <p>{{ message }}</p>
+    {% endif %}
+
+    <div class="row">
+      <div class="panel">
+        <h3>Upload Image</h3>
+        <form method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+          <div>
+            <label>Image: <input type="file" name="image" accept="image/*" required /></label>
+          </div>
+          <div>
+            <label>Detector:
+              <select name="model">
+                <option value="hog">hog</option>
+                <option value="cnn">cnn</option>
+              </select>
+            </label>
+          </div>
+          <div>
+            <label>Upsample: <input type="number" name="upsample" value="1" min="0" max="2" /></label>
+          </div>
+          <div>
+            <label>Threshold: <input type="number" step="0.01" name="threshold" value="0.6" /></label>
+          </div>
+          <div>
+            <button type="submit">Recognize</button>
+            <a href="/reload">Reload Model</a>
+          </div>
+        </form>
+      </div>
+
+      <div class="panel">
+        <h3>Annotated Result</h3>
+        {% if image_data_url %}
+          <img src="{{ image_data_url }}" alt="Annotated" style="max-width: 600px; height: auto;" />
+        {% else %}
+          <p>No image yet.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <h3>Detections</h3>
+    {% if results %}
+      <table>
+        <thead><tr><th>Label</th><th>Distance</th><th>Confidence</th><th>Box (t,r,b,l)</th></tr></thead>
+        <tbody>
+          {% for r in results %}
+            <tr>
+              <td>{{ r.label }}</td>
+              <td>{{ r.distance }}</td>
+              <td>{{ r.confidence }}</td>
+              <td>{{ r.box }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p>No faces found.</p>
+    {% endif %}
+
+  </body>
+  </html>
+
