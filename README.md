@@ -208,6 +208,37 @@ Volumes:
 - `./models` ↔ `/app/models`
 - `./` ↔ `/host` (for convenient file references)
 
+### GPU (Optional)
+If you have an NVIDIA GPU and want to experiment with the CNN detector (requires dlib built with CUDA), enable the GPU profile and make sure the NVIDIA container toolkit is installed.
+
+Note: The provided Dockerfile uses a CPU base image; for real GPU acceleration you’ll need a CUDA-enabled base and to build dlib with CUDA. The compose file includes device reservations and env vars under the `fr` service as a starting point.
+
+Examples:
+
+- Docker run with GPUs:
+```
+docker run --rm -it --gpus all \
+  -v "$PWD/dataset:/app/dataset" -v "$PWD/models:/app/models" \
+  cv-fr-mvp fr encode --model cnn
+```
+
+- Docker Compose (device reservations are included under the service):
+```
+docker compose run --rm fr fr encode --model cnn
+```
+
+### Sample Data Convenience
+Place a few images under `samples/<Person>/...` and copy them into `dataset/`:
+
+```
+python3 scripts/prepare_samples.py
+```
+
+With Docker Compose:
+```
+docker compose run --rm fr python3 scripts/prepare_samples.py
+```
+
 ## Tips
 - Data quality: Use clear, front-facing images with varied lighting/angles per person.
 - Class balance: Aim for similar numbers of samples per person to help KNN.
