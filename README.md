@@ -270,3 +270,9 @@ Open http://127.0.0.1:8000/ and upload an image. The page uses your trained mode
 
 API endpoint:
 - POST `/api/recognize` with `multipart/form-data` field `image`, optional `model`, `upsample`, `threshold`. Returns JSON of detections.
+
+Docker Compose (Django):
+```
+docker compose up web
+# open http://localhost:8000
+```
