@@ -2,6 +2,22 @@
 
 A small, practical face-recognition toolset with a CLI and two simple UIs (Streamlit and Django). Uses `face_recognition` (dlib), OpenCV, and scikit‑learn (KNN).
 
+## TL;DR (3 commands)
+
+Docker (recommended)
+```
+docker compose build
+docker compose run --rm fr fr encode && docker compose run --rm fr fr train
+docker compose up ui   # open http://localhost:8501
+```
+
+Conda (local install)
+```
+conda create -n cv311 python=3.11 -y && conda activate cv311 && conda install -y -c conda-forge dlib face_recognition opencv numpy scikit-learn joblib imutils tqdm streamlit pillow
+python3 fr.py encode && python3 fr.py train
+streamlit run ui/streamlit_app.py   # then load models/knn.joblib in sidebar
+```
+
 ## Quick Start
 
 Option A — Docker (recommended)
@@ -70,4 +86,3 @@ You can also install the console entry and use `fr` directly:
 
 ## License
 Private/Proprietary (unless the repository owner specifies otherwise).
-
