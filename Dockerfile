@@ -24,19 +24,19 @@ COPY requirements-django.txt requirements-django.txt
 COPY pyproject.toml pyproject.toml
 COPY README.md README.md
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt \
-    && pip install --no-cache-dir -r requirements-ui.txt \
-    && pip install --no-cache-dir -r requirements-django.txt \
-    && pip install --no-cache-dir -e .
-
-# Copy source code (after deps for better caching)
+# Copy source code needed for editable install
 COPY fr fr
 COPY ui ui
 COPY scripts scripts
 COPY manage.py manage.py
 COPY web web
 COPY recognition recognition
+
+# Install Python dependencies and project (editable)
+RUN pip install --no-cache-dir -r requirements.txt \
+    && pip install --no-cache-dir -r requirements-ui.txt \
+    && pip install --no-cache-dir -r requirements-django.txt \
+    && pip install --no-cache-dir -e .
 
 # Ensure common mount points exist
 RUN mkdir -p dataset models
