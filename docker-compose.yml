@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   fr:
     build: .
@@ -11,17 +9,7 @@ services:
       - ./:/host
       - ./samples:/app/samples
     profiles: ["default"]
-    # Optional GPU profile; requires NVIDIA drivers and runtime
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
-    environment:
-      - NVIDIA_VISIBLE_DEVICES=all
-      - NVIDIA_DRIVER_CAPABILITIES=compute,utility,video
+    
 
   ui:
     build: .
