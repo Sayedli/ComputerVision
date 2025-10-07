@@ -5,82 +5,96 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Face Recognition – Django</title>
     <style>
-      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 2rem; }
-      .row { display: flex; gap: 2rem; align-items: flex-start; }
-      .panel { border: 1px solid #ddd; padding: 1rem; border-radius: 8px; }
-      .error { color: #b00; }
-      table { border-collapse: collapse; }
-      th, td { border: 1px solid #ddd; padding: 6px 10px; }
+      :root{
+        --bg:#fff7ed; --panel:#fff3e0; --accent:#f59e0b; --accent2:#f97316; --text:#3f2d20; --muted:#8c6d5a; --border:#f2d6b3;
+      }
+      html,body{ height:100%; }
+      body{ margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background: radial-gradient(1200px 600px at 10% -10%, #fff1df 0%, var(--bg) 40%, var(--bg) 100%); color:var(--text); }
+      .container{ max-width:1100px; margin: 0 auto; padding: 2rem 1rem; }
+      .header h1{ margin:0 0 .25rem; }
+      .subtitle{ color:var(--muted); margin:.25rem 0 1.5rem; }
+      .row{ display:flex; gap:1.5rem; align-items:flex-start; flex-wrap:wrap; }
+      .panel{ flex:1 1 360px; background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:1rem 1.1rem; box-shadow:0 6px 20px rgba(245,158,11,.08); }
+      .error{ color:#b00020; font-weight:600; }
+      .btn{ background:var(--accent); color:white; border:none; padding:.6rem 1rem; border-radius:10px; cursor:pointer; }
+      .btn:hover{ background:var(--accent2); }
+      .link{ color:var(--accent2); text-decoration:none; margin-left:.5rem; }
+      .link:hover{ text-decoration:underline; }
+      table{ border-collapse:collapse; width:100%; background:white; border-radius:10px; overflow:hidden; }
+      th,td{ padding:8px 10px; border-bottom:1px solid var(--border); text-align:left; }
+      th{ background:#fff; }
+      .footer{ color:var(--muted); margin-top:1rem; font-size:.95rem; }
     </style>
   </head>
   <body>
-    <h1>Face Recognition – Django UI</h1>
-
-    {% if error %}
-      <p class="error">Error: {{ error }}</p>
-    {% endif %}
-    {% if message %}
-      <p>{{ message }}</p>
-    {% endif %}
-
-    <div class="row">
-      <div class="panel">
-        <h3>Upload Image</h3>
-        <form method="post" enctype="multipart/form-data">
-          {% csrf_token %}
-          <div>
-            <label>Image: <input type="file" name="image" accept="image/*" required /></label>
-          </div>
-          <div>
-            <label>Detector:
-              <select name="model">
-                <option value="hog">hog</option>
-                <option value="cnn">cnn</option>
-              </select>
-            </label>
-          </div>
-          <div>
-            <label>Upsample: <input type="number" name="upsample" value="1" min="0" max="2" /></label>
-          </div>
-          <div>
-            <label>Threshold: <input type="number" step="0.01" name="threshold" value="0.6" /></label>
-          </div>
-          <div>
-            <button type="submit">Recognize</button>
-            <a href="/reload">Reload Model</a>
-          </div>
-        </form>
+    <div class="container">
+      <div class="header">
+        <h1>😊 Face Recognition</h1>
+        <div class="subtitle">Cozy, friendly recognition in your browser. Upload a photo and we’ll label familiar faces.</div>
       </div>
 
-      <div class="panel">
-        <h3>Annotated Result</h3>
-        {% if image_data_url %}
-          <img src="{{ image_data_url }}" alt="Annotated" style="max-width: 600px; height: auto;" />
-        {% else %}
-          <p>No image yet.</p>
-        {% endif %}
+      {% if error %}<p class="error">Error: {{ error }}</p>{% endif %}
+      {% if message %}<p>{{ message }}</p>{% endif %}
+
+      <div class="row">
+        <div class="panel">
+          <h3>Upload Image</h3>
+          <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <p>
+              <input type="file" name="image" accept="image/*" required />
+            </p>
+            <p>
+              <label>Detector
+                <select name="model">
+                  <option value="hog">hog</option>
+                  <option value="cnn">cnn</option>
+                </select>
+              </label>
+            </p>
+            <p>
+              <label>Upsample <input type="number" name="upsample" value="1" min="0" max="2" style="width:4rem" /></label>
+              <label style="margin-left:.5rem">Threshold <input type="number" step="0.01" name="threshold" value="0.6" style="width:5rem" /></label>
+            </p>
+            <p>
+              <button class="btn" type="submit">Recognize</button>
+              <a class="link" href="/reload">Reload Model</a>
+            </p>
+          </form>
+          <p class="subtitle" style="margin-top:.5rem">Tip: better lighting and front‑facing photos work best.</p>
+        </div>
+
+        <div class="panel">
+          <h3>Annotated Result</h3>
+          {% if image_data_url %}
+            <img src="{{ image_data_url }}" alt="Annotated" style="max-width: 640px; width:100%; height:auto; border-radius:10px; border:1px solid var(--border);" />
+          {% else %}
+            <p class="subtitle">No image yet — choose a photo to get started.</p>
+          {% endif %}
+        </div>
       </div>
+
+      <h3>Detections</h3>
+      {% if results %}
+        <table>
+          <thead><tr><th>Label</th><th>Distance</th><th>Confidence</th><th>Box (t,r,b,l)</th></tr></thead>
+          <tbody>
+            {% for r in results %}
+              <tr>
+                <td>{{ r.label }}</td>
+                <td>{{ r.distance }}</td>
+                <td>{{ r.confidence }}</td>
+                <td>{{ r.box }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="subtitle">No faces found.</p>
+      {% endif %}
+
+      <div class="footer">Made with ☕ and 🍪 — enjoy!</div>
     </div>
-
-    <h3>Detections</h3>
-    {% if results %}
-      <table>
-        <thead><tr><th>Label</th><th>Distance</th><th>Confidence</th><th>Box (t,r,b,l)</th></tr></thead>
-        <tbody>
-          {% for r in results %}
-            <tr>
-              <td>{{ r.label }}</td>
-              <td>{{ r.distance }}</td>
-              <td>{{ r.confidence }}</td>
-              <td>{{ r.box }}</td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    {% else %}
-      <p>No faces found.</p>
-    {% endif %}
 
   </body>
   </html>
-
