@@ -88,7 +88,7 @@ def index(request: HttpRequest) -> HttpResponse:
             pil_img = Image.open(img_file)
             out = _process_image(pil_img)
             context.update(out)
-            context['message'] = f"Detected {len(out['results'])} face(s). Detector: {out['used_model'].upper()}"
+            context['message'] = f"Detected {len(out['results'])} face(s)."
         except Exception as e:
             context['error'] = str(e)
     return render(request, 'recognition/index.html', context)

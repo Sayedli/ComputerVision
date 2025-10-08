@@ -32,8 +32,14 @@
       .cam{ display:flex; flex-direction:column; gap:.6rem; align-items:center; }
       .cam video{ width:100%; max-width:520px; border-radius:12px; border:1px solid var(--border); background:#000; box-shadow:0 6px 20px rgba(0,0,0,.15); }
       .cam .row{ display:flex; gap:.75rem; align-items:center; }
-      .toggle{ display:inline-flex; align-items:center; gap:.5rem; padding:.3rem .6rem; border:1px solid var(--border); border-radius:999px; background:var(--panel); }
-      .toggle button{ background:var(--accent); color:white; border:none; padding:.25rem .6rem; border-radius:999px; cursor:pointer; }
+      /* Theme toggle switch */
+      .switch{ position:relative; width:56px; height:30px; border-radius:999px; background:var(--panel); border:1px solid var(--border); box-shadow: inset 0 0 6px rgba(0,0,0,.05); cursor:pointer; display:inline-flex; align-items:center; padding:2px; }
+      .switch .knob{ width:26px; height:26px; border-radius:50%; background:linear-gradient(180deg, #ffffff, #f1e5d9); box-shadow:0 2px 6px rgba(0,0,0,.12); transform: translateX(0); transition: transform .2s ease, background .2s ease; }
+      .switch.dark{ background: #3a2517; border-color:#4a2e1c; }
+      .switch.dark .knob{ transform: translateX(26px); background:linear-gradient(180deg, #ffe6cc, #f5b26e); }
+      .switch .icons{ position:absolute; inset:0; display:flex; justify-content:space-between; align-items:center; padding:0 6px; font-size:12px; opacity:.9; color:var(--muted); pointer-events:none; }
+      .switch .icons .sun{ filter:drop-shadow(0 0 1px rgba(0,0,0,.1)); }
+      .switch .icons .moon{ filter:drop-shadow(0 0 1px rgba(0,0,0,.1)); }
       /* Spinner overlay */
       .overlay{ position:fixed; inset:0; background:rgba(0,0,0,.25); display:none; align-items:center; justify-content:center; z-index:9999; }
       .overlay.show{ display:flex; }
@@ -48,8 +54,11 @@
         <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
           <h1 style="margin:0">Face Recognition</h1>
           <div style="display:flex;align-items:center;gap:1rem;">
-            <div class="toggle"><span id="theme-label">Light</span><button id="theme-btn" type="button">Toggle</button></div>
-            <a href="/manage" class="link">Manage (encode/train)</a>
+            <div id="theme-switch" class="switch" role="switch" aria-label="Theme">
+              <div class="icons"><span class="sun">☀️</span><span class="moon">🌙</span></div>
+              <div class="knob"></div>
+            </div>
+            <a href="/manage" class="link">Manage</a>
           </div>
         </div>
       </div>
@@ -96,16 +105,18 @@
           const fn = document.getElementById('file-name');
           const cam = document.getElementById('cam');
           const captureBtn = document.getElementById('capture');
-          const themeBtn = document.getElementById('theme-btn');
-          const themeLabel = document.getElementById('theme-label');
+          const themeSwitch = document.getElementById('theme-switch');
 
           // Theme toggle with localStorage
           const saved = localStorage.getItem('theme') || 'light';
-          if(saved === 'dark'){ body.classList.add('dark'); themeLabel.textContent='Dark'; }
-          themeBtn.addEventListener('click', () => {
-            body.classList.toggle('dark');
-            const mode = body.classList.contains('dark') ? 'dark' : 'light';
-            themeLabel.textContent = mode.charAt(0).toUpperCase() + mode.slice(1);
+          function applyTheme(mode){
+            if(mode === 'dark'){ body.classList.add('dark'); themeSwitch.classList.add('dark'); }
+            else { body.classList.remove('dark'); themeSwitch.classList.remove('dark'); }
+          }
+          applyTheme(saved);
+          themeSwitch.addEventListener('click', () => {
+            const mode = body.classList.contains('dark') ? 'light' : 'dark';
+            applyTheme(mode);
             localStorage.setItem('theme', mode);
           });
 
