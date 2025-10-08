@@ -31,5 +31,9 @@ services:
     volumes:
       - ./models:/app/models
       - ./dataset:/app/dataset
+      # Live-edit the Django app and templates without rebuilds
+      - ./recognition:/app/recognition
+      - ./web:/app/web
     environment:
       - FR_KNN_PATH=/app/models/knn.joblib
+      - DJANGO_DEBUG=1
