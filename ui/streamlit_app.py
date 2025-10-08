@@ -18,20 +18,20 @@ from fr.utils import draw_box_with_label, distance_to_confidence
 
 st.set_page_config(page_title="Face Recognition", layout="wide")
 
-# Cozy warm CSS theme
+# Warm, stylish theme (ff9933 shades)
 st.markdown(
     """
     <style>
       :root {
-        --bg: #fff7ed;          /* warm peach */
-        --panel: #fff3e0;       /* light peach */
-        --accent: #f59e0b;      /* amber */
-        --accent-2: #f97316;    /* orange */
-        --text: #3f2d20;        /* cocoa */
-        --muted: #8c6d5a;       /* latte */
-        --border: #f2d6b3;      /* sand */
+        --bg: #fff3e6;          /* light from #ff9933 */
+        --panel: #ffe6cc;       /* lighter panel */
+        --accent: #ff9933;      /* primary */
+        --accent-2: #ff8c1a;    /* deeper shade */
+        --text: #2e1f14;        /* dark cocoa */
+        --muted: #7a5a3a;       /* latte */
+        --border: #ffd9b3;      /* sand */
       }
-      .stApp { background: radial-gradient(1200px 600px at 10% -10%, #fff1df 0%, var(--bg) 40%, var(--bg) 100%); }
+      .stApp { background: radial-gradient(1200px 600px at 10% -10%, #ffe9d6 0%, var(--bg) 40%, var(--bg) 100%); }
       .cozy-header {
         padding: 1.25rem 1rem 0.25rem;
         color: var(--text);
@@ -57,8 +57,7 @@ st.markdown(
 st.markdown(
     """
     <div class="cozy-header">
-      <h1>😊 Face Recognition</h1>
-      <p class="cozy-subtitle">A warm little tool to label faces you know. Upload a photo or take a snapshot — we’ll handle the rest.</p>
+      <h1>Face Recognition</h1>
     </div>
     """,
     unsafe_allow_html=True,
@@ -87,7 +86,7 @@ if 'knn' not in st.session_state or run_button:
         st.session_state.knn = None
         st.error(f"Failed to load KNN: {e}")
 
-tab1, tab2 = st.tabs(["📷 Upload Image", "🎞️ Webcam Snapshot"])
+tab1, tab2 = st.tabs(["Upload Image", "Webcam Snapshot"])
 
 
 def process_image(pil_img: Image.Image) -> Dict:
@@ -160,5 +159,4 @@ with tab2:
             st.info("No faces found — try adjusting lighting or distance.")
     st.markdown("</div>", unsafe_allow_html=True)
 
-# Footer
-st.markdown("<div class='cozy-footer'>Made with ☕ and 🍪 — enjoy!</div>", unsafe_allow_html=True)
+# Footer (removed per request)

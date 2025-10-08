@@ -6,18 +6,19 @@
     <title>Face Recognition – Django</title>
     <style>
       :root{
-        --bg:#fff7ed; --panel:#fff3e0; --accent:#f59e0b; --accent2:#f97316; --text:#3f2d20; --muted:#8c6d5a; --border:#f2d6b3;
+        /* ff9933 palette */
+        --bg:#fff3e6; --panel:#ffe6cc; --accent:#ff9933; --accent2:#ff8c1a; --text:#2e1f14; --muted:#7a5a3a; --border:#ffd9b3;
       }
       html,body{ height:100%; }
-      body{ margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background: radial-gradient(1200px 600px at 10% -10%, #fff1df 0%, var(--bg) 40%, var(--bg) 100%); color:var(--text); }
+      body{ margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background: radial-gradient(1200px 600px at 10% -10%, #ffe9d6 0%, var(--bg) 40%, var(--bg) 100%); color:var(--text); }
       .container{ max-width:1100px; margin: 0 auto; padding: 2rem 1rem; }
       .header h1{ margin:0 0 .25rem; }
       .subtitle{ color:var(--muted); margin:.25rem 0 1.5rem; }
       .row{ display:flex; gap:1.5rem; align-items:flex-start; flex-wrap:wrap; }
       .panel{ flex:1 1 360px; background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:1rem 1.1rem; box-shadow:0 6px 20px rgba(245,158,11,.08); }
       .error{ color:#b00020; font-weight:600; }
-      .btn{ background:var(--accent); color:white; border:none; padding:.6rem 1rem; border-radius:10px; cursor:pointer; }
-      .btn:hover{ background:var(--accent2); }
+      .btn{ background:linear-gradient(180deg, var(--accent), var(--accent2)); color:white; border:none; padding:.6rem 1rem; border-radius:10px; cursor:pointer; box-shadow:0 4px 12px rgba(255, 153, 51, .25); }
+      .btn:hover{ filter:brightness(.98); }
       .link{ color:var(--accent2); text-decoration:none; margin-left:.5rem; }
       .link:hover{ text-decoration:underline; }
       table{ border-collapse:collapse; width:100%; background:white; border-radius:10px; overflow:hidden; }
@@ -29,8 +30,7 @@
   <body>
     <div class="container">
       <div class="header">
-        <h1>😊 Face Recognition</h1>
-        <div class="subtitle">Cozy, friendly recognition in your browser. Upload a photo and we’ll label familiar faces.</div>
+        <h1>Face Recognition</h1>
       </div>
 
       {% if error %}<p class="error">Error: {{ error }}</p>{% endif %}
@@ -93,7 +93,7 @@
         <p class="subtitle">No faces found.</p>
       {% endif %}
 
-      <div class="footer">Made with ☕ and 🍪 — enjoy!</div>
+      
     </div>
 
   </body>
