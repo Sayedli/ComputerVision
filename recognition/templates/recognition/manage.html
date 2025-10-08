@@ -1,0 +1,96 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Face Recognition – Manage</title>
+    <style>
+      :root{
+        --bg:#fff3e6; --panel:#ffe6cc; --accent:#ff9933; --accent2:#ff8c1a; --text:#2e1f14; --muted:#7a5a3a; --border:#ffd9b3;
+      }
+      html,body{ height:100%; }
+      body{ margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background: radial-gradient(1200px 600px at 10% -10%, #ffe9d6 0%, var(--bg) 40%, var(--bg) 100%); color:var(--text); }
+      .container{ max-width:1100px; margin: 0 auto; padding: 2rem 1rem; }
+      h1{ margin:0 0 .5rem; }
+      .subtitle{ color:var(--muted); margin:.25rem 0 1.5rem; }
+      .row{ display:flex; gap:1.5rem; align-items:flex-start; flex-wrap:wrap; }
+      .panel{ flex:1 1 340px; background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:1rem 1.1rem; box-shadow:0 6px 20px rgba(255,153,51,.10); }
+      .btn{ background:linear-gradient(180deg, var(--accent), var(--accent2)); color:white; border:none; padding:.6rem 1rem; border-radius:10px; cursor:pointer; box-shadow:0 4px 12px rgba(255, 153, 51, .25); }
+      .btn:hover{ filter:brightness(.98); }
+      table{ border-collapse:collapse; width:100%; background:white; border-radius:10px; overflow:hidden; }
+      th,td{ padding:8px 10px; border-bottom:1px solid var(--border); text-align:left; }
+      .stat{ display:flex; gap:.75rem; align-items:center; margin:.5rem 0; }
+      .dot{ width:10px; height:10px; border-radius:50%; background:var(--accent); box-shadow:0 0 0 3px rgba(255,153,51,.15); }
+      .ok{ color:#146c43; }
+      .warn{ color:#8a1c0a; }
+      .msgs{ margin:.75rem 0; }
+      .msg{ padding:.5rem .75rem; border-radius:8px; margin:.4rem 0; }
+      .msg.success{ background:#e8f5e9; border:1px solid #c8e6c9; color:#1b5e20; }
+      .msg.error{ background:#fdecea; border:1px solid #f8d7da; color:#842029; }
+      .topnav a{ color:var(--accent2); text-decoration:none; margin-right:1rem; }
+      .topnav a:hover{ text-decoration:underline; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="topnav">
+        <a href="/">← Back to Recognize</a>
+      </div>
+      <h1>Face Recognition – Manage</h1>
+      <div class="subtitle">Run encode/train and check dataset & model status.</div>
+
+      <div class="row">
+        <div class="panel">
+          <h3>Dataset</h3>
+          <div class="stat"><span class="dot"></span><div><strong>Total images:</strong> {{ total }}</div></div>
+          <div class="stat"><span class="dot"></span><div><strong>Persons:</strong> {{ persons|length }}</div></div>
+          {% if persons %}
+          <table>
+            <thead><tr><th>Person</th><th>Images</th></tr></thead>
+            <tbody>
+              {% for p in persons %}
+              <tr><td>{{ p.name }}</td><td>{{ p.count }}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% else %}
+            <div class="subtitle">No data yet. Add images under <code>dataset/&lt;Person&gt;/</code>.</div>
+          {% endif %}
+        </div>
+
+        <div class="panel">
+          <h3>Encode</h3>
+          <form method="post" action="/manage/encode">
+            {% csrf_token %}
+            <p>
+              <label>Detector
+                <select name="model"><option value="hog">hog</option><option value="cnn">cnn</option></select>
+              </label>
+              <label style="margin-left:.5rem">Upsample <input type="number" name="upsample" value="1" min="0" max="2" style="width:4rem" /></label>
+            </p>
+            <p><button class="btn" type="submit">Run Encode</button></p>
+            <div class="subtitle">Output: <code>{{ ENC_FILENAME|default:"encodings.npz" }}</code> {% if enc_exists %}<span class="ok">✓ found</span>{% else %}<span class="warn">• missing</span>{% endif %}</div>
+          </form>
+        </div>
+
+        <div class="panel">
+          <h3>Train</h3>
+          <form method="post" action="/manage/train">
+            {% csrf_token %}
+            <p><button class="btn" type="submit">Run Train</button></p>
+            <div class="subtitle">Model: <code>{{ KNN_FILENAME|default:"knn.joblib" }}</code> {% if knn_exists %}<span class="ok">✓ found</span>{% else %}<span class="warn">• missing</span>{% endif %}</div>
+          </form>
+        </div>
+      </div>
+
+      {% if messages %}
+      <div class="msgs">
+        {% for m in messages %}
+          <div class="msg {{ m.tags }}">{{ m }}</div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </body>
+  </html>
+
