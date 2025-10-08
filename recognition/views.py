@@ -39,12 +39,28 @@ def _get_knn(path: Path | None = None):
     return _KNN_CACHE['model']
 
 
-def _process_image(pil_img: Image.Image, detector_model: str = 'hog', upsample: int = 1, threshold: float = 0.6) -> Dict:
+def _process_image(pil_img: Image.Image, threshold: float = 0.6) -> Dict:
+    """Recognize faces with automatic detector selection.
+
+    Strategy: try HOG (fast, CPU‑friendly). If no faces found, fall back to CNN (slower, more accurate).
+    """
     knn = _get_knn()
     rgb = np.array(pil_img.convert('RGB'))
     bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
 
-    boxes = face_recognition.face_locations(rgb, number_of_times_to_upsample=int(upsample), model=detector_model)
+    # First pass: HOG
+    boxes = face_recognition.face_locations(rgb, number_of_times_to_upsample=1, model='hog')
+    used_model = 'hog'
+    # Fallback to CNN if nothing found
+    if not boxes:
+        try:
+            boxes = face_recognition.face_locations(rgb, number_of_times_to_upsample=1, model='cnn')
+            used_model = 'cnn'
+        except Exception:
+            # If CNN not available, keep empty
+            boxes = []
+            used_model = 'hog'
+
     results: List[Dict] = []
     if boxes:
         encs = face_recognition.face_encodings(rgb, boxes, num_jitters=1)
@@ -61,21 +77,18 @@ def _process_image(pil_img: Image.Image, detector_model: str = 'hog', upsample: 
     buf = io.BytesIO()
     Image.fromarray(out_rgb).save(buf, format='JPEG')
     data_url = 'data:image/jpeg;base64,' + base64.b64encode(buf.getvalue()).decode('ascii')
-    return {'image_data_url': data_url, 'results': results}
+    return {'image_data_url': data_url, 'results': results, 'used_model': used_model}
 
 
 def index(request: HttpRequest) -> HttpResponse:
     context: Dict = {}
     if request.method == 'POST' and request.FILES.get('image'):
-        detector_model = request.POST.get('model', 'hog')
-        upsample = int(request.POST.get('upsample', '1'))
-        threshold = float(request.POST.get('threshold', '0.6'))
         try:
             img_file = request.FILES['image']
             pil_img = Image.open(img_file)
-            out = _process_image(pil_img, detector_model=detector_model, upsample=upsample, threshold=threshold)
+            out = _process_image(pil_img)
             context.update(out)
-            context['message'] = f"Detected {len(out['results'])} face(s)."
+            context['message'] = f"Detected {len(out['results'])} face(s). Detector: {out['used_model'].upper()}"
         except Exception as e:
             context['error'] = str(e)
     return render(request, 'recognition/index.html', context)
@@ -121,11 +134,10 @@ def manage(request: HttpRequest) -> HttpResponse:
 def manage_encode(request: HttpRequest) -> HttpResponse:
     if request.method != 'POST':
         return redirect('manage')
-    model = request.POST.get('model', 'hog')
-    upsample = int(request.POST.get('upsample', '1'))
+    # Simpler UX: run encode with HOG by default; fall back to CNN only on demand (CLI)
     try:
-        X, y, n_imgs, n_faces = encode_dataset(dataset_dir=DATASET_DIR, enc_path=ENC_PATH, model=model, upsample=upsample)
-        messages.success(request, f"Encoded {n_faces} faces from {n_imgs} images. Saved {ENC_PATH.name}.")
+        X, y, n_imgs, n_faces = encode_dataset(dataset_dir=DATASET_DIR, enc_path=ENC_PATH, model='hog', upsample=1)
+        messages.success(request, f"Encoded {n_faces} faces from {n_imgs} images (HOG). Saved {ENC_PATH.name}.")
     except Exception as e:
         messages.error(request, f"Encode failed: {e}")
     return redirect('manage')

@@ -62,14 +62,8 @@
           <h3>Encode</h3>
           <form method="post" action="/manage/encode">
             {% csrf_token %}
-            <p>
-              <label>Detector
-                <select name="model"><option value="hog">hog</option><option value="cnn">cnn</option></select>
-              </label>
-              <label style="margin-left:.5rem">Upsample <input type="number" name="upsample" value="1" min="0" max="2" style="width:4rem" /></label>
-            </p>
             <p><button class="btn" type="submit">Run Encode</button></p>
-            <div class="subtitle">Output: <code>{{ ENC_FILENAME|default:"encodings.npz" }}</code> {% if enc_exists %}<span class="ok">✓ found</span>{% else %}<span class="warn">• missing</span>{% endif %}</div>
+            <div class="subtitle">Uses HOG by default for speed. Output: <code>encodings.npz</code> {% if enc_exists %}<span class="ok">✓ found</span>{% else %}<span class="warn">• missing</span>{% endif %}</div>
           </form>
         </div>
 
@@ -93,4 +87,3 @@
     </div>
   </body>
   </html>
-

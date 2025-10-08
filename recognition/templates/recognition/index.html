@@ -44,21 +44,7 @@
           <h3>Upload Image</h3>
           <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
-            <p>
-              <input type="file" name="image" accept="image/*" required />
-            </p>
-            <p>
-              <label>Detector
-                <select name="model">
-                  <option value="hog">hog</option>
-                  <option value="cnn">cnn</option>
-                </select>
-              </label>
-            </p>
-            <p>
-              <label>Upsample <input type="number" name="upsample" value="1" min="0" max="2" style="width:4rem" /></label>
-              <label style="margin-left:.5rem">Threshold <input type="number" step="0.01" name="threshold" value="0.6" style="width:5rem" /></label>
-            </p>
+            <p><input type="file" name="image" accept="image/*" required /></p>
             <p>
               <button class="btn" type="submit">Recognize</button>
               <a class="link" href="/reload">Reload Model</a>
@@ -77,23 +63,8 @@
         </div>
       </div>
 
-      <h3>Detections</h3>
-      {% if results %}
-        <table>
-          <thead><tr><th>Label</th><th>Distance</th><th>Confidence</th><th>Box (t,r,b,l)</th></tr></thead>
-          <tbody>
-            {% for r in results %}
-              <tr>
-                <td>{{ r.label }}</td>
-                <td>{{ r.distance }}</td>
-                <td>{{ r.confidence }}</td>
-                <td>{{ r.box }}</td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      {% else %}
-        <p class="subtitle">No faces found.</p>
+      {% if message %}
+        <p class="subtitle">{{ message }}</p>
       {% endif %}
 
       
